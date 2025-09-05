@@ -1,7 +1,7 @@
 {
-  "name": "@ubie-oss/slack-mcp-server",
-  "version": "0.1.4",
-  "description": "A Slack MCP server",
+  "name": "simple-slack-mcp-server",
+  "version": "0.0.1",
+  "description": "A simplified MCP server for Slack messaging and channel operations with stdio transport",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
@@ -18,22 +18,27 @@
     "fix": "npm run fix:eslint && npm run fix:prettier",
     "fix:eslint": "eslint \"src/**/*.ts\" \"examples/**/*.ts\" --fix",
     "fix:prettier": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\"",
-    "examples": "node --import ./ts-node-loader.js examples/get_users.ts",
-    "examples:http": "node --import ./ts-node-loader.js examples/get_users_http.ts",
+    "examples": "node --import ./ts-node-loader.js examples/list_channels.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
-    "slack"
+    "slack",
+    "model-context-protocol",
+    "ai",
+    "chatbot",
+    "messaging",
+    "anthropic",
+    "claude"
   ],
-  "author": "Ubie, Inc.",
+  "author": "Milko Slavov <milko.slavov@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ubie-oss/slack-mcp-server.git"
+    "url": "git+https://github.com/mslavov/slack-mcp-server.git"
   },
-  "homepage": "https://github.com/ubie-oss/slack-mcp-server",
+  "homepage": "https://github.com/mslavov/slack-mcp-server",
   "bugs": {
-    "url": "https://github.com/ubie-oss/slack-mcp-server/issues"
+    "url": "https://github.com/mslavov/slack-mcp-server/issues"
   },
   "license": "Apache-2.0",
   "dependencies": {
@@ -41,14 +46,12 @@
     "@slack/web-api": "^7.9.1",
     "@types/node": "^20.10.3",
     "dotenv": "^16.4.7",
-    "express": "^5.1.0",
     "typescript": "^5.3.2",
     "zod": "^3.22.4",
     "zod-to-json-schema": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
-    "@types/express": "^5.0.3",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "eslint": "^8.57.1",

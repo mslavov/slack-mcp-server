@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Model Context Protocol (MCP) server that provides AI assistants with standardized access to Slack APIs. It's written in TypeScript and supports both stdio (process-based) and HTTP transport methods.
+This is a simplified Model Context Protocol (MCP) server that provides AI assistants with standardized access to essential Slack APIs. It's written in TypeScript and uses only stdio transport for direct integration.
 
 ## Development Commands
 
@@ -21,12 +21,11 @@ This is a Model Context Protocol (MCP) server that provides AI assistants with s
 
 ### Examples
 - `npm run examples` - Run stdio transport example
-- `npm run examples:http` - Run HTTP transport example
 
 ## Architecture
 
 ### Core Structure
-The server follows a schema-driven design pattern:
+The server follows a simplified schema-driven design pattern:
 
 1. **Request/Response Schemas** (`src/schemas.ts`):
    - All Slack API interactions are validated with Zod schemas
@@ -34,39 +33,34 @@ The server follows a schema-driven design pattern:
    - Response schemas filter API responses to only necessary fields
 
 2. **Main Server** (`src/index.ts`):
-   - Dual transport support via command-line flag
+   - Stdio-only transport for CLI integration
    - Tool registration and request handling
-   - Environment variable validation
+   - Single environment variable validation (bot token only)
 
-### Transport Modes
-- **Stdio (default)**: For CLI integration (Claude Desktop, etc.)
-- **HTTP**: For web applications via `-port` flag
+### Transport Mode
+- **Stdio only**: For CLI integration (Claude Desktop, etc.)
 
 ### Available Tools
 All tools follow the pattern: validate request → call Slack API → parse response → return JSON
 
-- Channel operations: list, post message, get history
-- Thread operations: reply, get replies  
-- User operations: get users, profiles, bulk profiles
-- Message operations: search, add reactions
-
-### Tool Selection Guidelines
-
-**When to use `slack_search_messages`:**
-- You need to find messages with specific criteria (keywords, user, date range, channel)
-- You want to filter/narrow down results based on conditions
-- You're looking for targeted information rather than browsing
-
-**When to use `slack_get_channel_history`:**
-- You want to see the latest conversation flow without specific filters
-- You need ALL messages including bot/automation messages (search excludes these)
-- You want to browse messages chronologically with pagination
-- You don't have specific search criteria and just want to understand recent activity
+**Core messaging and channel tools (6 total):**
+- `slack_list_channels` - List public channels with pagination
+- `slack_post_message` - Post messages to channels
+- `slack_reply_to_thread` - Reply to message threads
+- `slack_add_reaction` - Add emoji reactions to messages
+- `slack_get_channel_history` - Get message history from channels
+- `slack_get_thread_replies` - Get all replies in threads
 
 ### Environment Requirements
 Must set in environment or `.env` file:
-- `SLACK_BOT_TOKEN`: Bot User OAuth Token
-- `SLACK_USER_TOKEN`: User OAuth Token (for search)
+- `SLACK_BOT_TOKEN`: Bot User OAuth Token (only token required)
+
+### Required Bot Permissions
+Your Slack bot needs these OAuth scopes:
+- `channels:read` - To list channels
+- `chat:write` - To post messages
+- `chat:write.public` - To post in public channels
+- `reactions:write` - To add reactions
 
 ## Key Implementation Notes
 
@@ -74,9 +68,9 @@ Must set in environment or `.env` file:
 
 2. **Type Safety**: All Slack API responses are parsed through Zod schemas to ensure type safety and limit response size
 
-3. **Error Handling**: The server validates tokens on startup and provides clear error messages
+3. **Error Handling**: The server validates bot token on startup and provides clear error messages
 
-4. **Publishing**: Uses GitHub Package Registry - requires PAT for installation
+4. **Simplified Dependencies**: Removed HTTP server dependencies (express, @types/express)
 
 5. **ES Modules**: Project uses `"type": "module"` - use ES import syntax
 
@@ -88,21 +82,18 @@ Must set in environment or `.env` file:
 3. Implement handler following existing pattern: validate → API call → parse → return
 4. Update README.md with new tool documentation
 
-### Search Messages Considerations
-1. **Query Field**: The `query` field accepts plain text search terms only. Modifiers like `from:`, `in:`, `before:` etc. are NOT allowed in the query field - use the dedicated fields instead
-2. **Date Search**: The `on:` modifier may not find results due to timezone differences between the Slack workspace and the user's local time
-3. **ID-Only Fields**: All search modifier fields require proper Slack IDs for consistency and reliability:
-   - `in_channel`: Channel ID (e.g., `C1234567`) - use `slack_list_channels` to find channel IDs. The server automatically converts channel IDs to channel names for search compatibility.
-   - `from_user`: User ID (e.g., `U1234567`) - use `slack_get_users` to find user IDs
-4. **Required Workflow**: Always use the appropriate listing tools first to convert names to IDs before searching
-5. **Debug**: Search queries are logged to console for troubleshooting
+### Channel History vs Message Search
+- **Use `slack_get_channel_history`** for:
+  - Latest conversation flow without specific filters
+  - ALL messages including bot/automation messages
+  - Sequential browsing with pagination
+  - Understanding recent channel activity
 
 ### Known API Limitations
-1. **Bot Message Exclusion**: The `search.messages` API excludes bot/automation messages by default, unlike the Slack UI
-2. **Indexing Delays**: Messages are not indexed immediately; there can be delays between posting and searchability
-3. **Proximity Filtering**: When multiple messages match in close proximity, only one result may be returned
-4. **Rate Limiting**: Non-Marketplace apps have severe rate limits (1 request/minute, 15 messages max as of 2025)
-5. **Comprehensive Alternative**: Use `conversations.history` for retrieving all messages including bot messages
+1. **Bot Access**: Bot can only access public channels it has been added to
+2. **Rate Limiting**: Standard Slack API rate limits apply
+3. **Message History**: Limited to bot's join date for most channels
+4. **Permissions**: All operations respect workspace and channel permissions
 
 ### Modifying Schemas
 When updating schemas, ensure backward compatibility and update both request validation and response filtering to maintain efficiency.

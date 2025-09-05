@@ -1,80 +1,62 @@
 # Examples
 
-This directory contains example clients for the Slack MCP Server, demonstrating both stdio and Streamable HTTP transport methods.
+This directory contains example clients for the Slack MCP Server using stdio transport.
 
 ## Available Examples
 
-### 1. Stdio Client (`get_users.ts`)
-Uses the traditional stdio transport to communicate with the MCP server.
-
-### 2. Streamable HTTP Client (`get_users_http.ts`)
-Uses the newer Streamable HTTP transport to communicate with the MCP server over HTTP.
+### Stdio Client (`list_channels.ts`)
+Demonstrates how to connect to the MCP server and list Slack channels using stdio transport.
 
 ## Setup
 
 1. Set up your environment variables in `.env`:
 ```env
-# For the server
+# For the server and examples
 SLACK_BOT_TOKEN=xoxb-your-bot-token
-SLACK_USER_TOKEN=xoxp-your-user-token
-
-# For the examples (same values, different variable names)
-EXMAPLES_SLACK_BOT_TOKEN=xoxb-your-bot-token
-EXMAPLES_SLACK_USER_TOKEN=xoxp-your-user-token
 ```
 
 ## Usage
 
-### Running the Stdio Example
+### Running the Example
 
 ```bash
 # Run the stdio client example
 npm run examples
 ```
 
-### Running the HTTP Example
+## What the Example Does
 
-```bash
-# Terminal 1: Start the HTTP server
-npm run start -- -port 3000
+The example:
+1. Connects to the Slack MCP Server via stdio transport
+2. Lists all available tools
+3. Calls the `slack_list_channels` tool to retrieve workspace channels
+4. Displays channel information including:
+   - Channel name
+   - Number of members
+   - Channel purpose/description  
+   - Channel ID
+   - Pagination information if more channels are available
 
-# Terminal 2: Run the HTTP client example
-npm run examples:http
+## Available Tools
 
-# Or specify a custom server URL
-npm run examples:http http://localhost:3001/mcp
-```
-
-## What the Examples Do
-
-Both examples:
-1. Connect to the Slack MCP Server
-2. List available tools
-3. Call the `slack_get_users` tool with a limit of 100 users
-4. Display the retrieved user information including:
-   - User name
-   - Real name
-   - User ID
-   - Pagination information if more users are available
-
-## Transport Comparison
-
-### Stdio Transport
-- **Pros**: Simple, no network setup required
-- **Cons**: Process-based communication, harder to debug network issues
-- **Use case**: Local development, direct integration
-
-### Streamable HTTP Transport  
-- **Pros**: Standard HTTP, easier debugging, supports web-based clients
-- **Cons**: Requires server setup, network configuration
-- **Use case**: Web applications, remote clients, production deployments
+The simplified server provides these core messaging and channel tools:
+- `slack_list_channels` - List public channels in the workspace
+- `slack_post_message` - Post a new message to a channel
+- `slack_reply_to_thread` - Reply to a message thread
+- `slack_add_reaction` - Add a reaction emoji to a message
+- `slack_get_channel_history` - Get message history from a channel
+- `slack_get_thread_replies` - Get all replies in a message thread
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Missing environment variables**: Ensure all required `SLACK_BOT_TOKEN`, `SLACK_USER_TOKEN`, `EXMAPLES_SLACK_BOT_TOKEN`, and `EXMAPLES_SLACK_USER_TOKEN` are set.
+1. **Missing environment variables**: Ensure `SLACK_BOT_TOKEN` is set in your environment or `.env` file.
 
-2. **Connection refused (HTTP)**: Make sure the HTTP server is running on the specified port before running the HTTP client.
+2. **Permission errors**: Ensure your Slack bot token has the necessary permissions:
+   - `channels:read` - To list channels
+   - `chat:write` - To post messages  
+   - `chat:write.public` - To post in public channels
+   - `reactions:write` - To add reactions
 
-3. **Permission errors**: Ensure your Slack tokens have the necessary permissions to list users in your workspace. 
+3. **Channel access**: The bot can only access public channels it has been added to.

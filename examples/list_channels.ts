@@ -14,21 +14,15 @@ const __dirname = dirname(__filename);
 config();
 
 // Get and validate necessary environment variables
-const slackToken = process.env.EXMAPLES_SLACK_BOT_TOKEN;
-const userToken = process.env.EXMAPLES_SLACK_USER_TOKEN;
+const slackToken = process.env.SLACK_BOT_TOKEN;
 
 if (!slackToken) {
-  throw new Error('EXMAPLES_SLACK_BOT_TOKEN environment variable is required');
-}
-
-if (!userToken) {
-  throw new Error('EXMAPLES_SLACK_USER_TOKEN environment variable is required');
+  throw new Error('SLACK_BOT_TOKEN environment variable is required');
 }
 
 // After validation, can be safely treated as a string
 const env = {
   SLACK_BOT_TOKEN: slackToken,
-  SLACK_USER_TOKEN: userToken,
 } as const satisfies Record<string, string>;
 
 async function main() {
@@ -63,12 +57,12 @@ async function main() {
     const toolsResponse = await client.listTools();
     console.log('Available tools:', toolsResponse.tools);
 
-    // Call slack_get_users
+    // Call slack_list_channels
     const response = (await client.callTool(
       {
-        name: 'slack_get_users',
+        name: 'slack_list_channels',
         arguments: {
-          limit: 100,
+          limit: 10,
         },
       },
       CallToolResultSchema
@@ -79,27 +73,35 @@ async function main() {
       response.content.length > 0 &&
       response.content[0]?.type === 'text'
     ) {
-      // Parse the response and display user information
+      // Parse the response and display channel information
       const slackResponse = JSON.parse(response.content[0].text);
 
-      console.log('Slack users retrieved successfully!');
-      console.log('Total users:', slackResponse.members?.length || 0);
+      console.log('Slack channels retrieved successfully!');
+      console.log('Total channels:', slackResponse.channels?.length || 0);
 
-      // Display basic information for each user
-      if (slackResponse.members && slackResponse.members.length > 0) {
-        console.log('\nUser information:');
-        slackResponse.members.forEach(
-          (user: { id: string; name: string; real_name?: string }) => {
+      // Display basic information for each channel
+      if (slackResponse.channels && slackResponse.channels.length > 0) {
+        console.log('\nChannel information:');
+        slackResponse.channels.forEach(
+          (channel: {
+            id: string;
+            name: string;
+            num_members?: number;
+            purpose?: { value?: string };
+          }) => {
+            const purpose = channel.purpose?.value || 'No purpose set';
+            const members = channel.num_members || 'Unknown';
             console.log(
-              `- ${user.name} (${user.real_name || 'N/A'}) [ID: ${user.id}]`
+              `- #${channel.name} (${members} members) [ID: ${channel.id}]`
             );
+            console.log(`  Purpose: ${purpose}`);
           }
         );
 
         // Display pagination information if available
         if (slackResponse.response_metadata?.next_cursor) {
           console.log(
-            `\nMore users available. Next cursor: ${slackResponse.response_metadata.next_cursor}`
+            `\nMore channels available. Next cursor: ${slackResponse.response_metadata.next_cursor}`
           );
         }
       }
