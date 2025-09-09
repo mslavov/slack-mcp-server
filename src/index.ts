@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 import {
   ListChannelsRequestSchema,
   PostMessageRequestSchema,
-  ReplyToThreadRequestSchema,
+  PostRichMessageRequestSchema,
   AddReactionRequestSchema,
   GetChannelHistoryRequestSchema,
   GetThreadRepliesRequestSchema,
@@ -55,13 +55,15 @@ function createServer(): Server {
         },
         {
           name: 'slack_post_message',
-          description: 'Post a new message to a Slack channel',
+          description:
+            'Post a plain text message to a Slack channel or reply to a thread',
           inputSchema: zodToJsonSchema(PostMessageRequestSchema),
         },
         {
-          name: 'slack_reply_to_thread',
-          description: 'Reply to a specific message thread in Slack',
-          inputSchema: zodToJsonSchema(ReplyToThreadRequestSchema),
+          name: 'slack_post_rich_message',
+          description:
+            'Post a rich structured message to Slack with Block Kit support. Can post to channels or reply to threads. Supports plain text, markdown formatting, and rich Block Kit layouts with sections, images, dividers, headers, and more.',
+          inputSchema: zodToJsonSchema(PostRichMessageRequestSchema),
         },
         {
           name: 'slack_add_reaction',
@@ -110,34 +112,64 @@ function createServer(): Server {
 
         case 'slack_post_message': {
           const args = PostMessageRequestSchema.parse(request.params.arguments);
-          const response = await slackClient.chat.postMessage({
+          const postMessageParams: Record<string, unknown> = {
             channel: args.channel_id,
             text: args.text,
-          });
+          };
+
+          if (args.thread_ts) postMessageParams.thread_ts = args.thread_ts;
+
+          const response = await slackClient.chat.postMessage(
+            postMessageParams as unknown as Parameters<
+              typeof slackClient.chat.postMessage
+            >[0]
+          );
           if (!response.ok) {
             throw new Error(`Failed to post message: ${response.error}`);
           }
+
+          const actionType = args.thread_ts
+            ? 'Reply sent to thread'
+            : 'Message posted';
           return {
-            content: [{ type: 'text', text: 'Message posted successfully' }],
+            content: [{ type: 'text', text: `${actionType} successfully` }],
           };
         }
 
-        case 'slack_reply_to_thread': {
-          const args = ReplyToThreadRequestSchema.parse(
+        case 'slack_post_rich_message': {
+          const args = PostRichMessageRequestSchema.parse(
             request.params.arguments
           );
-          const response = await slackClient.chat.postMessage({
+
+          // Build the API call parameters
+          const postMessageParams: Record<string, unknown> = {
             channel: args.channel_id,
-            thread_ts: args.thread_ts,
-            text: args.text,
-          });
+          };
+
+          // Add optional parameters if provided
+          if (args.text) postMessageParams.text = args.text;
+          if (args.blocks) postMessageParams.blocks = args.blocks;
+          if (args.thread_ts) postMessageParams.thread_ts = args.thread_ts;
+          if (args.parse) postMessageParams.parse = args.parse;
+          if (args.unfurl_links !== undefined)
+            postMessageParams.unfurl_links = args.unfurl_links;
+          if (args.unfurl_media !== undefined)
+            postMessageParams.unfurl_media = args.unfurl_media;
+
+          const response = await slackClient.chat.postMessage(
+            postMessageParams as unknown as Parameters<
+              typeof slackClient.chat.postMessage
+            >[0]
+          );
           if (!response.ok) {
-            throw new Error(`Failed to reply to thread: ${response.error}`);
+            throw new Error(`Failed to post rich message: ${response.error}`);
           }
+
+          const actionType = args.thread_ts
+            ? 'Reply sent to thread'
+            : 'Rich message posted';
           return {
-            content: [
-              { type: 'text', text: 'Reply sent to thread successfully' },
-            ],
+            content: [{ type: 'text', text: `${actionType} successfully` }],
           };
         }
         case 'slack_add_reaction': {

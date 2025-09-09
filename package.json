@@ -1,6 +1,6 @@
 {
   "name": "simple-slack-mcp-server",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A simplified MCP server for Slack messaging and channel operations with stdio transport",
   "main": "dist/index.js",
   "type": "module",
@@ -19,6 +19,8 @@
     "fix:eslint": "eslint \"src/**/*.ts\" \"examples/**/*.ts\" --fix",
     "fix:prettier": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\"",
     "examples": "node --import ./ts-node-loader.js examples/list_channels.ts",
+    "examples:text": "node --import ./ts-node-loader.js examples/post_text_message.ts",
+    "examples:rich": "node --import ./ts-node-loader.js examples/post_rich_message.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
